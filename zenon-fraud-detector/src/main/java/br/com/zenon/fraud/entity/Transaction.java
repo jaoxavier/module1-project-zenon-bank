@@ -13,5 +13,6 @@ public record Transaction(
         TransactionCustomer recipient,
 
         boolean isFraud,
-        boolean isFlaggedFraud) {
+        boolean isFlaggedFraud)
+{
 }
