@@ -4,6 +4,7 @@ import br.com.zenon.fraud.entity.Transaction;
 import br.com.zenon.fraud.entity.TransactionCustomer;
 import br.com.zenon.fraud.enums.TransactionType;
 
+import javax.swing.text.html.Option;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,21 +23,22 @@ public class TransactionIngestor {
     public TransactionIngestor() {
     }
 
-    public List<Transaction> ingest(File csv) throws FileNotFoundException {
+    public Optional<List<Transaction>> ingest(File csv) throws FileNotFoundException {
         List<Transaction> transactionList = new ArrayList<>();
-
+        String line = "";
+        
         try (BufferedReader br = new BufferedReader(new FileReader(csv))) {
             br.readLine();
-            String line;
 
             while ((line = br.readLine()) != null) {
                 String[] values = line.split(DELIMIT);
                 transactionList.add(parseTransaction(values));
             }
 
-            return transactionList;
-        } catch (RuntimeException | IOException e) {
-            throw new RuntimeException(e);
+            return Optional.of(transactionList);
+        } catch (Exception e) {
+            System.err.println("Error: " + line + " " + e);
+            return Optional.empty();
         }
     }
 
@@ -56,17 +59,23 @@ public class TransactionIngestor {
     }
 
     private static Transaction parseTransaction(String[] values) {
-        int step = Integer.parseInt(values[0]);
-        TransactionType type = TransactionType.valueOf(values[1]);
-        BigDecimal amount = new BigDecimal(values[2]);
-        TransactionCustomer origin = new TransactionCustomer(values[3], new BigDecimal(values[4]), new BigDecimal(values[5]));
-        TransactionCustomer recipient = new TransactionCustomer(values[6], new BigDecimal(values[7]), new BigDecimal(values[8]));
-        boolean isFraud = Objects.equals(values[9], "1");
-        boolean isFlaggedFraud = Objects.equals(values[10], "1");
+        try{
+            int step = Integer.parseInt(values[0]);
+            TransactionType type = TransactionType.valueOf(values[1]);
+            BigDecimal amount = new BigDecimal(values[2]);
+            TransactionCustomer origin = new TransactionCustomer(values[3], new BigDecimal(values[4]), new BigDecimal(values[5]));
+            TransactionCustomer recipient = new TransactionCustomer(values[6], new BigDecimal(values[7]), new BigDecimal(values[8]));
+            boolean isFraud = "1".equals(values[9]);
+            boolean isFlaggedFraud = "1".equals(values[10]);
 
-        return new Transaction(
-                step, type, amount, origin, recipient, isFraud, isFlaggedFraud
-        );
+            return new Transaction(
+                    step, type, amount, origin, recipient, isFraud, isFlaggedFraud
+            );
+        }
+        catch (Exception e){
+            System.err.println("Error " + e);
+        }
+        return null;
     }
 
     // THATS NOT MY OWN AWNSER, COURSE SUGGESTION
