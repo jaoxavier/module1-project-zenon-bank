@@ -13,8 +13,19 @@ import java.math.BigDecimal;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     static void main() throws FileNotFoundException {
+        TransactionIngestor ti = new TransactionIngestor();
+        long start = System.currentTimeMillis();
+        ti.ingest(new File("zenon-fraud-detector/data/PS_20174392719_1491204439457_log.csv"));
+        long end = System.currentTimeMillis();
 
-        TransactionIngestor.ingest(new File("zenon-fraud-detector/data/PS_20174392719_1491204439457_log.csv"));
+        IO.println("Ingest: " + (end-start) +" ms");
+
+        start = System.currentTimeMillis();
+        ti.read("zenon-fraud-detector/data/PS_20174392719_1491204439457_log.csv");
+        end = System.currentTimeMillis();
+
+        IO.println("Read: " + (end-start) +" ms");
+
 
         Transaction transactionOne = new Transaction(1,
                 TransactionType.PAYMENT,

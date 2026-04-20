@@ -6,6 +6,8 @@ import br.com.zenon.fraud.enums.TransactionType;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +18,10 @@ public class TransactionIngestor {
 
     public static final String DELIMIT = ",";
 
-    public static List<Transaction> ingest(File csv) throws FileNotFoundException {
+    public TransactionIngestor() {
+    }
+
+    public List<Transaction> ingest(File csv) throws FileNotFoundException {
         List<Transaction> transactionList = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(csv))) {
@@ -27,9 +32,25 @@ public class TransactionIngestor {
                 String[] values = line.split(DELIMIT);
                 transactionList.add(parseTransaction(values));
             }
-            
+
             return transactionList;
         } catch (RuntimeException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // THATS NOT MY OWN AWNSER, COURSE SUGGESTION
+    public List<Transaction> read(String filename){
+        Path path = Path.of(filename);
+
+        try {
+            List<String> lines = Files.readAllLines(path);
+            return lines.stream()
+                    .skip(1)
+                    //.limit(1000)
+                    .map(this::parseTransaction)
+                    .toList();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -43,9 +64,23 @@ public class TransactionIngestor {
         boolean isFraud = Objects.equals(values[9], "1");
         boolean isFlaggedFraud = Objects.equals(values[10], "1");
 
-        Transaction transaction = new Transaction(
+        return new Transaction(
                 step, type, amount, origin, recipient, isFraud, isFlaggedFraud
         );
-        return transaction;
+    }
+
+    // THATS NOT MY OWN AWNSER, COURSE SUGGESTION
+    private Transaction parseTransaction(String line) {
+        String[] chunks = line.split(",");
+
+        int step = Integer.parseInt(chunks[0]);
+        TransactionType type = TransactionType.valueOf(chunks[1]);
+        BigDecimal amount = new BigDecimal(chunks[2]);
+        var origin = new TransactionCustomer(chunks[3], new BigDecimal(chunks[4]), new BigDecimal(chunks[5]));
+        var recipient = new TransactionCustomer(chunks[6], new BigDecimal(chunks[7]), new BigDecimal(chunks[8]));
+        boolean isFraud = "1".equals(chunks[9]);
+        boolean isFlaggedFraud = "1".equals(chunks[10]);
+
+        return new Transaction(step, type, amount, origin, recipient, isFraud, isFlaggedFraud);
     }
 }
